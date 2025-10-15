@@ -1,6 +1,5 @@
 file(GLOB CORE_SRC 
-    process.cpp
-    fs.cpp
+    "*.cpp"
 )
 add_library(core ${CORE_SRC})
 target_link_libraries(core PUBLIC tiny-process-library::tiny-process-library)

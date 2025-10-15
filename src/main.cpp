@@ -11,6 +11,8 @@ int main(int argc, char** argv) {
     )"};
 
     build_subcommand build(app);
+    clean_subcommand clean(app);
+    new_subcommand new_cmd(app);
 
     app.parse(argc, argv);
 

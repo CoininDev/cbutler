@@ -1,8 +1,9 @@
-#include "core/fs.h"
+#include <core/fs.h>
 
-#include "filesystem"
-#include "iostream"
-#include "string"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 namespace core::fs {
 
@@ -16,10 +17,39 @@ void ensure_dir(const std::filesystem::path& dir) {
     }
 }
 
+void remove_dir(const std::filesystem::path& dir) {
+    if (!std::filesystem::exists(dir)) return;
+
+    std::error_code ec;
+    std::filesystem::remove_all(dir, ec);
+    if (ec) {
+        std::cerr << "Não foi possível remover: " << dir << ": " << ec
+                  << std::endl;
+    }
+}
+
 void require_file(const std::filesystem::path& file) {
     if (!std::filesystem::exists(file)) {
         std::cerr << file << " não encontrado. (require_file)" << std::endl;
     }
+}
+
+std::string read_to_string(const std::filesystem::path& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Erro: Não foi possível abrir " +
+                                 path.string());
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+    return buffer.str();
+}
+
+void overwrite(const std::filesystem::path& path, const std::string& content) {
+    std::ofstream file(path);
+    file << content;
+    file.close();
 }
 
 }  // namespace core::fs
