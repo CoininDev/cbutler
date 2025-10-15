@@ -1,6 +1,0 @@
-/home/xab/Documentos/CLion/cbutler/build/CMakeFiles/cbutler.dir
-/home/xab/Documentos/CLion/cbutler/build/CMakeFiles/edit_cache.dir
-/home/xab/Documentos/CLion/cbutler/build/CMakeFiles/rebuild_cache.dir
-/home/xab/Documentos/CLion/cbutler/build/src/core/CMakeFiles/core.dir
-/home/xab/Documentos/CLion/cbutler/build/src/core/CMakeFiles/edit_cache.dir
-/home/xab/Documentos/CLion/cbutler/build/src/core/CMakeFiles/rebuild_cache.dir
