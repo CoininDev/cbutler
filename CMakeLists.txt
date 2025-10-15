@@ -4,13 +4,13 @@ project(cbutler)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
 
 add_subdirectory(src/core)
 add_subdirectory(vendors/tiny-process-library)
+add_executable(${PROJECT_NAME} src/main.cpp src/subcommand.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE
-        core
-        tiny-process-library::tiny-process-library
+    core
+    tiny-process-library::tiny-process-library
 )
 
 
