@@ -10,11 +10,9 @@ int main(int argc, char** argv) {
         Cbutler is a CLI tool for managing projects with C/C++.
     )"};
 
-    build_subcommand build;
-    build.add(app);
+    build_subcommand build(app);
 
     app.parse(argc, argv);
-    build.run();
 
     return 0;
 }

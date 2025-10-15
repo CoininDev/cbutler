@@ -7,7 +7,6 @@ class subcommand {
     CLI::App* cmd;
 
    public:
-    subcommand(CLI::App& parent_app);
     virtual ~subcommand() = default;
     virtual void run() = 0;
 };
@@ -17,6 +16,6 @@ class build_subcommand : public subcommand {
     bool release = false;
 
    public:
-    build_subcommand(CLI::App& parent_app) override;
+    build_subcommand(CLI::App& parent_app);
     void run() override;
 };
