@@ -24,7 +24,7 @@ void scaffold::_copy_files() {
 std::string scaffold::_replace_vars(const std::string& content) {
     auto _left = "<__";
     auto right_ = "__>";
-    std::string result = "";
+    std::string result = content;
 
     for (const auto& [vkey, vval] : _variables) {
         auto placeholder = _left + vkey + right_;
