@@ -8,8 +8,9 @@
 
 namespace core::fs {
 
-void ensure_dir(const std::filesystem::path& dir) {
-    if (std::filesystem::exists(dir)) return;
+void ensure_dir(const std::filesystem::path &dir) {
+    if (std::filesystem::exists(dir))
+        return;
 
     std::error_code ec;
     if (!std::filesystem::create_directory(dir, ec)) {
@@ -18,8 +19,9 @@ void ensure_dir(const std::filesystem::path& dir) {
     }
 }
 
-void remove_dir(const std::filesystem::path& dir) {
-    if (!std::filesystem::exists(dir)) return;
+void remove_dir(const std::filesystem::path &dir) {
+    if (!std::filesystem::exists(dir))
+        return;
 
     std::error_code ec;
     std::filesystem::remove_all(dir, ec);
@@ -29,13 +31,13 @@ void remove_dir(const std::filesystem::path& dir) {
     }
 }
 
-void require_file(const std::filesystem::path& file) {
+void require_file(const std::filesystem::path &file) {
     if (!std::filesystem::exists(file)) {
         std::cerr << file << " não encontrado. (require_file)" << std::endl;
     }
 }
 
-std::string read_to_string(const std::filesystem::path& path) {
+std::string read_to_string(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open())
         throw std::runtime_error("Erro: Não foi possível abrir " +
@@ -47,7 +49,7 @@ std::string read_to_string(const std::filesystem::path& path) {
     return buffer.str();
 }
 
-std::vector<std::string> read_lines(const std::filesystem::path& path) {
+std::vector<std::string> read_lines(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file)
         throw std::runtime_error("Erro: Não foi possível abrir " +
@@ -57,31 +59,32 @@ std::vector<std::string> read_lines(const std::filesystem::path& path) {
     std::string line;
 
     while (std::getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
         lines.push_back(line);
     }
 
     return lines;
 }
 
-std::string join_lines(const std::vector<std::string>& lines) {
+std::string join_lines(const std::vector<std::string> &lines) {
     std::ostringstream out;
     for (size_t i = 0; i < lines.size(); ++i) {
         out << lines[i];
-        if (i + 1 < lines.size())  // evita \n extra no final
+        if (i + 1 < lines.size()) // evita \n extra no final
             out << '\n';
     }
     return out.str();
 }
 
-void overwrite(const std::filesystem::path& path, const std::string& content) {
+void overwrite(const std::filesystem::path &path, const std::string &content) {
     std::ofstream file(path);
     file << content;
     file.close();
 }
 
-std::tuple<std::string, int> find_line_with(const std::filesystem::path& path,
-                                            const std::string& exp) {
+std::tuple<std::string, int> find_line_with(const std::filesystem::path &path,
+                                            const std::string &exp) {
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Erro ao abrir arquivo: " << path << std::endl;
@@ -101,15 +104,4 @@ std::tuple<std::string, int> find_line_with(const std::filesystem::path& path,
     return std::tuple<std::string, int>("", -1);
 }
 
-void replace_all(std::string& str, const std::string& from,
-                 const std::string& to) {
-    if (from.empty()) return;  // evita loop infinito
-    size_t pos = 0;
-    while ((pos = str.find(from, pos)) != std::string::npos) {
-        str.replace(pos, from.length(), to);
-        pos += to.length();  // avança para não substituir dentro do que acabou
-                             // de colocar
-    }
-}
-
-}  // namespace core::fs
+} // namespace core::fs

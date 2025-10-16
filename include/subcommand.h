@@ -84,6 +84,12 @@ class mod_new_subcommand : public subcommand {
         core::butlerxml::append_line_in_section(
             "modules", "add_subdirectory(src/" + _mod_name + ")",
             core::cmake::cmakelists_path());
+
+        core::cmake::CMakeParser parser();
+        parser().set_variable("MOD_NAME", _mod_name);
+        auto txt = parser().parse("module");
+        core::butlerxml::append_line_in_section("modules", txt,
+                                                core::cmake::cmakelists_path());
     }
 };
 

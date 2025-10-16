@@ -1,4 +1,5 @@
 #pragma once
+#include <core/butlerxml.h>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -12,5 +13,13 @@ std::vector<std::string> inside_flag(const std::string &flag,
 
 std::string cmakelists_str();
 stdfs::path cmakelists_path();
+
+class CMakeParser : public butlerxml::ConfigParser {
+    CMakeParser() {
+        _codeblocks.insert("module", R"(
+            add_subdirectory(src/<__MOD_NAME__>)
+        )");
+    }
+};
 
 } // namespace core::cmake

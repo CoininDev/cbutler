@@ -5,11 +5,6 @@
 #include <string>
 #include <vector>
 
-const std::string _left = "%<";
-const std::string right_ = ">%";
-const std::string end_mark = "/";
-const std::string comment = "#";
-
 namespace stdfs = std::filesystem;
 
 namespace core::butlerxml {
@@ -59,8 +54,8 @@ void overwrite_section(const std::string &section_name,
     // invalid or absent
     if (start_line < 0 || end_line < 0 || end_line <= start_line) {
         // Remove old invalid comment, in case they exist
-        core::fs::replace_all(file_raw, comment + start_exp, "");
-        core::fs::replace_all(file_raw, comment + end_exp, "");
+        core::str::replace_all(file_raw, comment + start_exp, "");
+        core::str::replace_all(file_raw, comment + end_exp, "");
 
         // Add new section at the end
         std::string file_new = file_raw + "\n" + comment + start_exp + "\n" +

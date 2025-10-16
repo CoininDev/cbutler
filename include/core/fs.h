@@ -16,6 +16,5 @@ std::string join_lines(const std::vector<std::string> &lines);
 std::tuple<std::string, int> find_line_with(const std::filesystem::path &path,
                                             const std::string &exp);
 void overwrite(const std::filesystem::path &path, const std::string &content);
-void replace_all(std::string &str, const std::string &from,
-                 const std::string &to);
+
 } // namespace core::fs
