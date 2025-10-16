@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/fs.h>
+
 #include <filesystem>
 #include <string>
 #include <unordered_map>
@@ -15,34 +16,42 @@ const std::string comment = "#";
 
 namespace core::scaffolding {
 class ProjectTemplate {
-  public:
+   public:
     void setVariable(std::string key, std::string val);
     void setVariables(std::unordered_map<std::string, std::string> vars);
     void clone();
 
-  private:
+   private:
     stdfs::path _src_path;
     stdfs::path _dst_path;
     std::unordered_map<std::string, std::string> _variables;
+    std::string _replace_vars(const std::string& content);
+    void _copy_files();
+    void _interpret_names();
+    void _interpret_content();
 };
 
 class CodeBlockLibrary {
-  public:
+   public:
     void setVariable(std::string key, std::string val);
     void setVariables(std::unordered_map<std::string, std::string> vars);
     std::string parse(std::string text);
     std::unordered_map<std::string, std::string> code_block;
 
-  private:
+   private:
     std::unordered_map<std::string, std::string> _variables;
 };
 
 class PseudoXmlParser {
-  public:
+   public:
     std::string find_section(std::string);
+    std::vector<std::unordered_map<std::string, std::string>> find_single_tags(
+        std::string tag_name);
+    std::unordered_map<std::string, std::string> single_tag(std::string line);
+
     void append_section(std::string section_name, std::string append);
     void overwrite_section(std::string section_name, std::string new_section);
     stdfs::path current_file;
 };
 
-} // namespace core::scaffolding
+}  // namespace core::scaffolding

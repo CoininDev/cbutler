@@ -5,7 +5,7 @@
 
 namespace core::str {
 
-std::vector<std::string> split_lines(const std::string &raw) {
+std::vector<std::string> split_lines(const std::string& raw) {
     std::vector<std::string> lines;
     std::istringstream stream(raw);
     std::string line;
@@ -17,7 +17,16 @@ std::vector<std::string> split_lines(const std::string &raw) {
     return lines;
 }
 
-std::string join_lines(const std::vector<std::string> &lines) {
+std::vector<std::string> split_char(const char c, std::string raw) {
+    size_t pos = raw.find(c);
+    if (pos != std::string::npos) {
+        std::string chave = raw.substr(0, pos);
+        std::string valor = raw.substr(pos + 1);
+        return {chave, valor};
+    }
+}
+
+std::string join_lines(const std::vector<std::string>& lines) {
     std::ostringstream stream;
 
     for (size_t i = 0; i < lines.size(); ++i) {
@@ -30,8 +39,8 @@ std::string join_lines(const std::vector<std::string> &lines) {
     return stream.str();
 }
 
-std::tuple<std::string, int> find_line_with(const std::string &raw,
-                                            const std::string &exp) {
+std::tuple<std::string, int> find_line_with(const std::string& raw,
+                                            const std::string& exp) {
     std::istringstream stream(raw);
     std::string line;
     int line_number = 0;
@@ -46,16 +55,15 @@ std::tuple<std::string, int> find_line_with(const std::string &raw,
     return std::make_tuple("", -1);
 }
 
-void replace_all(std::string &str, const std::string &from,
-                 const std::string &to) {
-    if (from.empty())
-        return; // evita loop infinito
+void replace_all(std::string& str, const std::string& from,
+                 const std::string& to) {
+    if (from.empty()) return;  // evita loop infinito
     size_t pos = 0;
     while ((pos = str.find(from, pos)) != std::string::npos) {
         str.replace(pos, from.length(), to);
-        pos += to.length(); // avança para não substituir dentro do que acabou
-                            // de colocar
+        pos += to.length();  // avança para não substituir dentro do que
+                             // acabou de colocar
     }
 }
 
-} // namespace core::str
+}  // namespace core::str

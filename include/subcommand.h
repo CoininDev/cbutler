@@ -1,7 +1,8 @@
 #pragma once
 
-#include <CLI/CLI.hpp>
 #include <core/core.h>
+
+#include <CLI/CLI.hpp>
 #include <string>
 #include <vector>
 
@@ -10,11 +11,11 @@ const std::filesystem::path SCAFFOLDS_DIR =
     "/home/xab/Documentos/CLion/cbutler/scaffolds/";
 
 class subcommand {
-  protected:
-    CLI::App *cmd;
+   protected:
+    CLI::App* cmd;
 
-  public:
-    subcommand(CLI::App *cmd) : cmd(cmd) {
+   public:
+    subcommand(CLI::App* cmd) : cmd(cmd) {
         cmd->callback([this]() { this->run(); });
     }
     virtual ~subcommand() = default;
@@ -22,84 +23,84 @@ class subcommand {
 };
 
 class build_subcommand : public subcommand {
-  private:
+   private:
     bool release = false;
 
-  public:
-    build_subcommand(CLI::App &parent_app);
+   public:
+    build_subcommand(CLI::App& parent_app);
     void run() override;
 };
 
 class clean_subcommand : public subcommand {
-  public:
-    clean_subcommand(CLI::App &parent_app);
+   public:
+    clean_subcommand(CLI::App& parent_app);
     void run() override;
 };
 
 class new_subcommand : public subcommand {
-  private:
+   private:
     std::filesystem::path _scaffold_path;
     std::string _project_name;
     bool _create_folder = true;
 
-  public:
-    new_subcommand(CLI::App &parent_app);
+   public:
+    new_subcommand(CLI::App& parent_app);
     void run() override;
 };
 
 class run_subcommand : public subcommand {
-  private:
+   private:
     bool release = false;
     std::string _project_name = "";
 
-  public:
-    run_subcommand(CLI::App &parent_app);
+   public:
+    run_subcommand(CLI::App& parent_app);
     void run() override;
 };
 
-class mod_new_subcommand : public subcommand {
-  private:
-    std::filesystem::path _scaffold_path;
-    std::string _mod_name;
+// class mod_new_subcommand : public subcommand {
+//   private:
+//     std::filesystem::path _scaffold_path;
+//     std::string _mod_name;
 
-  public:
-    mod_new_subcommand(CLI::App &parent_app)
-        : subcommand(parent_app.add_subcommand(
-              "new", "Creates new module in project")) {
-        cmd->add_option("-n,--name", _mod_name, "Defines module name")
-            ->required();
-        _scaffold_path = "mod";
-    }
+//   public:
+//     mod_new_subcommand(CLI::App &parent_app)
+//         : subcommand(parent_app.add_subcommand(
+//               "new", "Creates new module in project")) {
+//         cmd->add_option("-n,--name", _mod_name, "Defines module name")
+//             ->required();
+//         _scaffold_path = "mod";
+//     }
 
-    ~mod_new_subcommand() override = default;
+//     ~mod_new_subcommand() override = default;
 
-    void run() override {
-        core::fs::ensure_dir("src/");
-        core::fs::ensure_dir("src/" + _mod_name);
-        core::scaffold::scaffold scaffold(SCAFFOLDS_DIR / "mod",
-                                          "src/" + _mod_name);
-        scaffold.set_variable("MOD_NAME", _mod_name);
-        scaffold.clone();
+//     void run() override {
+//         core::fs::ensure_dir("src/");
+//         core::fs::ensure_dir("src/" + _mod_name);
+//         core::scaffold::scaffold scaffold(SCAFFOLDS_DIR / "mod",
+//                                           "src/" + _mod_name);
+//         scaffold.set_variable("MOD_NAME", _mod_name);
+//         scaffold.clone();
 
-        core::butlerxml::append_line_in_section(
-            "modules", "add_subdirectory(src/" + _mod_name + ")",
-            core::cmake::cmakelists_path());
+//         core::butlerxml::append_line_in_section(
+//             "modules", "add_subdirectory(src/" + _mod_name + ")",
+//             core::cmake::cmakelists_path());
 
-        core::cmake::CMakeParser parser();
-        parser().set_variable("MOD_NAME", _mod_name);
-        auto txt = parser().parse("module");
-        core::butlerxml::append_line_in_section("modules", txt,
-                                                core::cmake::cmakelists_path());
-    }
-};
+//         core::cmake::CMakeParser parser();
+//         parser().set_variable("MOD_NAME", _mod_name);
+//         auto txt = parser().parse("module");
+//         core::butlerxml::append_line_in_section("modules", txt,
+//                                                 core::cmake::cmakelists_path());
+//     }
+// };
 
-class mod_subcommand : public subcommand {
-  private:
-    std::vector<std::string> submodule_names{};
-    mod_new_subcommand new_cmd;
+// class mod_subcommand : public subcommand {
+//   private:
+//     std::vector<std::string> submodule_names{};
+//     mod_new_subcommand new_cmd;
 
-  public:
-    mod_subcommand(CLI::App &parent_app);
-    ~mod_subcommand() override = default;
-    void run() override;
-};
+//   public:
+//     mod_subcommand(CLI::App &parent_app);
+//     ~mod_subcommand() override = default;
+//     void run() override;
+// };

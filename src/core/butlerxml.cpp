@@ -9,8 +9,8 @@ namespace stdfs = std::filesystem;
 
 namespace core::butlerxml {
 
-std::vector<std::string> get_section(const std::string &section_name,
-                                     const stdfs::path &path) {
+std::vector<std::string> get_section(const std::string& section_name,
+                                     const stdfs::path& path) {
     auto start_exp = _left + section_name + right_;
     auto end_exp = _left + end_mark + section_name + right_;
     int start_line = 0;
@@ -20,7 +20,7 @@ std::vector<std::string> get_section(const std::string &section_name,
     std::tie(std::ignore, end_line) = core::fs::find_line_with(path, end_exp);
 
     if (start_line < 0 || end_line < 0 || end_line <= start_line)
-        return {}; // not found or invalid
+        return {};  // not found or invalid
 
     auto lines = core::fs::read_lines(path);
 
@@ -31,16 +31,16 @@ std::vector<std::string> get_section(const std::string &section_name,
     return section_lines;
 }
 
-void append_line_in_section(const std::string &section_name,
-                            const std::string &line, const stdfs::path &path) {
+void append_line_in_section(const std::string& section_name,
+                            const std::string& line, const stdfs::path& path) {
     auto section = get_section(section_name, path);
     section.push_back(line);
     overwrite_section(section_name, core::str::join_lines(section), path);
 }
 
-void overwrite_section(const std::string &section_name,
-                       const std::string &new_content,
-                       const stdfs::path &path) {
+void overwrite_section(const std::string& section_name,
+                       const std::string& new_content,
+                       const stdfs::path& path) {
     auto start_exp = _left + section_name + right_;
     auto end_exp = _left + end_mark + section_name + right_;
     int start_line = 0;
@@ -82,4 +82,4 @@ void overwrite_section(const std::string &section_name,
     core::fs::overwrite(path, joined);
 }
 
-} // namespace core::butlerxml
+}  // namespace core::butlerxml
