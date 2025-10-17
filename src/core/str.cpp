@@ -24,6 +24,7 @@ std::vector<std::string> split_char(const char c, std::string raw) {
         std::string valor = raw.substr(pos + 1);
         return {chave, valor};
     }
+    return {};
 }
 
 std::string join_lines(const std::vector<std::string>& lines) {

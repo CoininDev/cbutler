@@ -25,11 +25,18 @@ class IConfigStrategy {
 
     virtual void read(ConfigData& data) = 0;
     virtual void write(const ConfigData& data) = 0;
+
+    virtual void build(const stdfs::path& build_path, bool release,
+                       const ConfigData& data) = 0;
+    virtual void run(const stdfs::path& build_path, const ConfigData& data) = 0;
 };
 
 class CMakeConfigStrategy : public IConfigStrategy {
     void read(ConfigData& data) override;
     void write(const ConfigData& data) override;
+    void build(const stdfs::path& build_path, bool release,
+               const ConfigData& data) override;
+    void run(const stdfs::path& build_path, const ConfigData& data) override;
 };
 
 class Config {

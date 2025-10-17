@@ -3,10 +3,11 @@
 #include <filesystem>
 #include <regex>
 
+#include "core/cmake.h"
 #include "core/fs.h"
+#include "core/process.h"
 #include "core/scaffolding.h"
 #include "core/str.h"
-
 namespace stdfs = std::filesystem;
 
 using namespace core::config;
@@ -14,32 +15,12 @@ using namespace core::config;
 //
 // ===== CMakeConfigStrategy =====
 //
-std::vector<std::string> inside_flag(const std::string& flag,
-                                     const std::string& line) {
-    std::vector<std::string> result;
-
-    // Cria regex que captura tudo dentro dos parênteses do comando
-    std::string regex_str = flag + R"(\s*\(([^)]*)\))";
-    std::regex pattern(regex_str);
-    std::smatch match;
-
-    if (std::regex_search(line, match, pattern) && match.size() > 1) {
-        std::string inside = match[1].str();  // conteúdo entre os parênteses
-        std::istringstream iss(inside);
-        std::string token;
-        while (iss >> token) {
-            result.push_back(token);
-        }
-    }
-
-    return result;
-}
 
 std::vector<std::string> parse_sets(std::string raw) {
     std::vector<std::string> result;
     auto lines = core::str::split_lines(raw);
     for (const std::string& line : lines) {
-        auto val = inside_flag("set", line);
+        auto val = core::cmake::inside_flag("set", line);
         result.push_back(val[0] + "=" + val[1]);
     }
     return result;
@@ -49,7 +30,7 @@ std::vector<std::string> parse_modules(std::string raw) {
     std::vector<std::string> result;
     auto lines = core::str::split_lines(raw);
     for (const std::string& line : lines) {
-        auto val = inside_flag("set", line)[0];
+        auto val = core::cmake::inside_flag("set", line)[0];
         std::regex prefix(R"(src/)");
         auto new_val = std::regex_replace(val, prefix, "");
     }
@@ -71,15 +52,12 @@ std::vector<std::string> parse_dependencies(std::string raw) {
 
 void CMakeConfigStrategy::read(ConfigData& data) {
     auto filename = "CMakeLists.txt";
-    // TODO: Ler dados de configuração de um arquivo CMake (ex: CMakeLists.txt)
+
     std::string raw;
     if (stdfs::exists(filename)) raw = core::fs::read_to_string(filename);
     core::scaffolding::PseudoXmlParser xml;
 
-    std::string projectline;
-    std::tie(projectline, std::ignore) =
-        core::str::find_line_with(raw, "project(");
-    data.project_name = inside_flag("project", projectline)[0];
+    data.project_name = core::cmake::project_name(filename);
 
     auto sets_raw = xml.find_section("sets");
     auto modules_raw = xml.find_section("modules");
@@ -117,6 +95,7 @@ void CMakeConfigStrategy::write(const ConfigData& data) {
 
     auto filename = "CMakeLists.txt";
     ConfigData disk_data;
+    core::scaffolding::PseudoXmlParser xml;
     read(disk_data);
     std::string raw;
     if (stdfs::exists(filename)) raw = core::fs::read_to_string(filename);
@@ -125,23 +104,73 @@ void CMakeConfigStrategy::write(const ConfigData& data) {
         int line;
         std::tie(std::ignore, line) =
             core::str::find_line_with(raw, "project(");
+        core::fs::replace_line(
+            filename, line,
+            core::cmake::wrap_flag("project", data.project_name));
     }
 
     if (disk_data.sets != data.sets) {
+        std::vector<std::string> sets;
+        for (auto set : data.sets) {
+            auto cu = core::str::split_char('=', set);
+            cbl.setVariable("KEY", cu[0]);
+            cbl.setVariable("VALUE", cu[1]);
+            sets.push_back(cbl.parse("set"));
+        }
+
+        xml.overwrite_section("sets", core::str::join_lines(sets));
     }
 
     if (disk_data.modules != data.modules) {
+        std::vector<std::string> modules;
+        for (auto mod : data.modules) {
+            cbl.setVariable("MOD_NAME", mod);
+            modules.push_back(cbl.parse("module"));
+        }
+
+        xml.overwrite_section("modules", core::str::join_lines(modules));
     }
 
     if (disk_data.dependencies != data.dependencies) {
+        std::vector<std::string> deps;
+        for (auto dep : data.dependencies) {
+            auto cu = core::str::split_char('=', dep);
+            cbl.setVariable("ID", cu[0]);
+            cbl.setVariable("SRC", cu[1]);
+            cbl.setVariable("DIR", "vendors/" + cu[0]);
+            deps.push_back(cbl.parse("dependency"));
+        }
+
+        xml.overwrite_section("", core::str::join_lines(deps));
     }
 }
 
+void CMakeConfigStrategy::build(const stdfs::path& build_path, bool release,
+                                const ConfigData& data) {
+    core::fs::require_file("CMakeLists.txt");
+
+    std::string build_flag = "-DCMAKE_BUILD_TYPE=Debug";
+    if (release) {
+        build_flag = "-DCMAKE_BUILD_TYPE=Release";
+    }
+
+    core::process::run(
+        "cmake -S . -B+ " + build_path.string() + " " + build_flag, "");
+    core::process::run("cmake --build" + build_path.string(), "");
+}
+void CMakeConfigStrategy::run(const stdfs::path& build_path,
+                              const ConfigData& data) {
+    core::process::run(build_path.string() + data.project_name, "");
+}
 //
 // ===== Config =====
 //
 
-Config::Config() = default;
+Config::Config() {
+    if (stdfs::exists("CMakeLists.txt")) {
+        strategy = std::make_unique<CMakeConfigStrategy>();
+    }
+};
 Config::~Config() = default;
 
 void Config::write_now() {

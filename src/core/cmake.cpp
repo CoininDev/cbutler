@@ -11,11 +11,10 @@ namespace stdfs = std::filesystem;
 
 namespace core::cmake {
 
-std::string project_name() {
-    if (!stdfs::exists("CMakeLists.txt"))
-        return "";
+std::string project_name(const stdfs::path& configfile) {
+    if (!stdfs::exists(configfile)) return "";
     auto [line_content, line] =
-        core::fs::find_line_with("CMakeLists.txt", "project(");
+        core::fs::find_line_with(configfile, "project(");
     if (line == -1) {
         std::cerr << "Ocorreu um erro ao buscar por nome do projeto."
                   << std::endl;
@@ -24,8 +23,8 @@ std::string project_name() {
     return inside_flag("project", line_content)[0];
 }
 
-std::vector<std::string> inside_flag(const std::string &flag,
-                                     const std::string &line) {
+std::vector<std::string> inside_flag(const std::string& flag,
+                                     const std::string& line) {
     std::vector<std::string> result;
 
     // Cria regex que captura tudo dentro dos parênteses do comando
@@ -34,7 +33,7 @@ std::vector<std::string> inside_flag(const std::string &flag,
     std::smatch match;
 
     if (std::regex_search(line, match, pattern) && match.size() > 1) {
-        std::string inside = match[1].str(); // conteúdo entre os parênteses
+        std::string inside = match[1].str();  // conteúdo entre os parênteses
         std::istringstream iss(inside);
         std::string token;
         while (iss >> token) {
@@ -45,15 +44,17 @@ std::vector<std::string> inside_flag(const std::string &flag,
     return result;
 }
 
+std::string wrap_flag(const std::string& flag, const std::string& content) {
+    return flag + "(" + content + ")";
+}
+
 std::string cmakelists_str() {
-    if (!stdfs::exists("CMakeLists.txt"))
-        return "";
+    if (!stdfs::exists("CMakeLists.txt")) return "";
     return core::fs::read_to_string("CMakeLists.txt");
 }
 stdfs::path cmakelists_path() {
-    if (!stdfs::exists("CMakeLists.txt"))
-        return "";
+    if (!stdfs::exists("CMakeLists.txt")) return "";
     return "CMakeLists.txt";
 }
 
-} // namespace core::cmake
+}  // namespace core::cmake

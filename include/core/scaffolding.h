@@ -20,6 +20,8 @@ class ProjectTemplate {
     void setVariable(std::string key, std::string val);
     void setVariables(std::unordered_map<std::string, std::string> vars);
     void clone();
+    ProjectTemplate(std::string src, std::string dst)
+        : _src_path(src), _dst_path(dst) {}
 
    private:
     stdfs::path _src_path;

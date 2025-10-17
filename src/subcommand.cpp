@@ -48,45 +48,29 @@ new_subcommand::new_subcommand(CLI::App& parent_app)
 }
 
 void new_subcommand::run() {
-    if (!_scaffold_path.string().contains("/")) {
-        _scaffold_path = SCAFFOLDS_DIR / _scaffold_path;
-    }
-
     std::string current_dir_name = stdfs::current_path().filename().string();
-    bool is_current_dir_empty = stdfs::is_empty(stdfs::current_path());
-    if (_project_name == current_dir_name && is_current_dir_empty) {
+    if (!_scaffold_path.string().contains("/"))
+        _scaffold_path = SCAFFOLDS_DIR / _scaffold_path;
+    if (!stdfs::is_empty(current_dir_name) && current_dir_name == _project_name)
         _create_folder = false;
-    }
 
-    if (_create_folder) {
-        core::fs::ensure_dir(_project_name);
-    }
-    core::scaffold::scaffold scaffold(_scaffold_path,
-                                      _create_folder ? _project_name : ".");
-    scaffold.set_variable("PROJECT_NAME", _project_name);
-    scaffold.clone();
+    if (_create_folder) core::fs::ensure_dir(_project_name);
+    core::scaffolding::ProjectTemplate templ(_scaffold_path, _project_name);
+    templ.setVariable("PROJECT_NAME", _project_name);
+    templ.clone();
 }
 
 run_subcommand::run_subcommand(CLI::App& parent_app)
     : subcommand(parent_app.add_subcommand("run", "Runs the subcommand")) {
     cmd->add_flag("-r,!-d", release, "Runs in release profile");
-    _project_name = core::cmake::project_name();
+    _project_name = core::cmake::project_name("CMakeLists.txt");
 }
 
 void run_subcommand::run() {
-    if (!cmd->parsed()) return;
-
+    core::config::Config cfg;
     core::fs::ensure_dir(".tmp");
-    core::fs::require_file("CMakeLists.txt");
-
-    std::string build_flag = "-DCMAKE_BUILD_TYPE=Debug";
-    if (release) {
-        build_flag = "-DCMAKE_BUILD_TYPE=Release";
-    }
-
-    core::process::run("cmake -S . -B .tmp " + build_flag, "");
-    core::process::run("cmake --build .tmp", "");
-    core::process::run(".tmp/" + _project_name, "");
+    cfg.strategy->build(".tmp", release, cfg.data);
+    cfg.strategy->run(".tmp", cfg.data);
     core::fs::remove_dir(".tmp");
 }
 
