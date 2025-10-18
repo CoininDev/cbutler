@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -102,15 +103,15 @@ std::tuple<std::string, int> find_line_with(const std::filesystem::path& path,
     return std::tuple<std::string, int>("", -1);
 }
 
-std::error_code replace_line(const std::filesystem::path& path,
-                             unsigned int line_num,
-                             const std::string& content) {
+void replace_line(const std::filesystem::path& path, unsigned int line_num,
+                  const std::string& content) {
     auto lines = read_lines(path);
     if (line_num >= lines.size())
-        return std::make_error_code(std::errc::invalid_argument);
+        throw std::invalid_argument(
+            "error replace_line(" + std::to_string(line_num) +
+            "): line_num needs to be less than lines count");
     lines[line_num] = content;
     overwrite(path, join_lines(lines));
-    return std::error_code{};
 }
 
 }  // namespace core::fs

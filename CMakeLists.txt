@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.24.0)
 project(cbutler)
+include(FetchContent)
 
 #%<sets>%
 set(CMAKE_CXX_STANDARD 23)
@@ -12,7 +13,13 @@ add_subdirectory(src/core)
 
 #%<dependencies>%
 add_subdirectory(vendors/tiny-process-library)
-add_subdirectory(vendors/CLI11)
+#%<dependency id="CLI11" src="https://github.com/CLIUtils/CLI11.git">
+FetchContent_Declare(
+    CLI11
+    GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+    GIT_TAG v2.5.0
+)
+FetchContent_MakeAvailable(CLI11)
 #%</dependencies>%
 
 add_executable(${PROJECT_NAME} src/main.cpp src/subcommand.cpp)

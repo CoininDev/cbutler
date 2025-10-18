@@ -1,7 +1,14 @@
 #include "core/scaffolding.h"
 
+#include <filesystem>
+#include <iostream>
 #include <regex>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <tuple>
 
+#include "core/fs.h"
 #include "core/str.h"
 
 using namespace core::scaffolding;
@@ -109,9 +116,21 @@ std::string CodeBlockLibrary::parse(std::string text) {
 //
 
 // helper functions
-std::string xml_wrap(std::string s) { return _left + s + right_; }
-std::string xml_wrap_end(std::string s) {
+std::string PseudoXmlParser::wrap(std::string s) { return _left + s + right_; }
+std::string PseudoXmlParser::wrap_end(std::string s) {
     return _left + end_mark + s + right_;
+}
+std::string PseudoXmlParser::wrap_single(
+    std::unordered_map<std::string, std::string> ss) {
+    std::ostringstream r;
+    if (!ss.contains("_TAG")) throw std::invalid_argument("_TAG needed");
+    r << "#%<" << ss["_TAG"] << " ";
+    for (const auto& [k, v] : ss) {
+        if (k == "_TAG") continue;
+        r << k << "=\"" << v << "\" ";
+    }
+    r << "/>%\n";
+    return r.str();
 }
 std::regex xml_wrap_single_regex(const std::string& tag_name) {
     // Regex resultará em algo como:
@@ -121,8 +140,9 @@ std::regex xml_wrap_single_regex(const std::string& tag_name) {
 }
 std::pair<int, int> xml_line_bounds(std::string section_name,
                                     std::string raw_text) {
-    auto start_exp = xml_wrap(section_name);
-    auto end_exp = xml_wrap_end(section_name);
+    PseudoXmlParser xml;
+    auto start_exp = xml.wrap(section_name);
+    auto end_exp = xml.wrap_end(section_name);
     int start_line = 0;
     int end_line = 0;
     std::tie(std::ignore, start_line) =
@@ -158,12 +178,27 @@ void PseudoXmlParser::append_section(std::string section_name,
     overwrite_section(section_name, core::str::join_lines(lines));
 }
 
+void PseudoXmlParser::overwrite_single_tag(
+    const std::string& tagname, size_t index,
+    std::unordered_map<std::string, std::string> map, stdfs::path path) {
+    if (!map.contains("_TAG"))
+        throw std::invalid_argument("overwrite_single_tag: This is not a tag.");
+    if (tagname.empty()) {
+        std::cerr << "overwrite_single_tag: Tag name needed, doing nothing.";
+        return;
+    }
+    auto raws = find_single_tags(tagname);
+    auto [_, line] =
+        core::fs::find_line_with("#%<" + raws[index]["_TAG"], path);
+    core::fs::replace_line(path, line, wrap_single(map));
+}
+
 void PseudoXmlParser::overwrite_section(std::string section_name,
                                         std::string new_section) {
     auto raw_text = core::fs::read_to_string(current_file);
     auto [start_line, end_line] = xml_line_bounds(section_name, raw_text);
-    auto start_exp = xml_wrap(section_name);
-    auto end_exp = xml_wrap_end(section_name);
+    auto start_exp = wrap(section_name);
+    auto end_exp = wrap_end(section_name);
 
     if (!is_section_valid(start_line, end_line)) {
         // Remove old invalid comment, in case they exist
@@ -194,6 +229,7 @@ void PseudoXmlParser::overwrite_section(std::string section_name,
     std::string joined = core::str::join_lines(file_clean);
     core::fs::overwrite(current_file, joined);
 }
+
 std::vector<std::unordered_map<std::string, std::string>>
 PseudoXmlParser::find_single_tags(std::string tag_name) {
     auto regex_exp = xml_wrap_single_regex(tag_name);

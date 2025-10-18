@@ -46,12 +46,17 @@ class CodeBlockLibrary {
 
 class PseudoXmlParser {
    public:
+    std::string wrap(std::string s);
+    std::string wrap_end(std::string s);
+    std::string wrap_single(std::unordered_map<std::string, std::string> ss);
     std::string find_section(std::string);
     std::vector<std::unordered_map<std::string, std::string>> find_single_tags(
         std::string tag_name);
     std::unordered_map<std::string, std::string> single_tag(std::string line);
-
     void append_section(std::string section_name, std::string append);
+    void overwrite_single_tag(const std::string& tagname, size_t index,
+                              std::unordered_map<std::string, std::string> map,
+                              stdfs::path path);
     void overwrite_section(std::string section_name, std::string new_section);
     stdfs::path current_file;
 };

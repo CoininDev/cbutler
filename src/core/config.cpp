@@ -2,9 +2,10 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <regex>
-#include <type_traits>
 #include <unordered_map>
+#include <utility>
 
 #include "core/cmake.h"
 #include "core/fs.h"
@@ -18,6 +19,23 @@ using namespace core::config;
 //
 // ===== CMakeConfigStrategy =====
 //
+std::vector<std::string> parse_compilers(std::string raw) {
+    core::scaffolding::PseudoXmlParser xml;
+
+    auto compilers_tags = xml.find_single_tags("compiler");
+    std::unordered_map<std::string, std::string> compilers;
+    if (compilers_tags.empty() || compilers_tags[0].empty()) {
+        // TODO: Make default cbutler compiler configurable
+        compilers["c"] = "/usr/bin/clang";
+        compilers["cxx"] = "/usr/bin/clang++";
+    }
+    std::vector<std::string> compiler_pairs;
+    compiler_pairs.reserve(compilers.size());
+    std::transform(
+        compilers.begin(), compilers.end(), std::back_inserter(compiler_pairs),
+        [](const auto& pair) { return pair.first + "=" + pair.second; });
+    return compiler_pairs;
+}
 
 std::vector<std::string> parse_sets(std::string raw) {
     std::vector<std::string> result;
@@ -61,33 +79,17 @@ void CMakeConfigStrategy::read(ConfigData& data) {
     core::scaffolding::PseudoXmlParser xml;
 
     data.project_name = core::cmake::project_name(filename);
-
-    std::unordered_map<std::string, std::string> compilers =
-        xml.find_single_tags("compiler")[0];
-    if (compilers.empty()) {
-        // TODO: Make default cbutler compiler configurable
-        compilers["c"] = "/usr/bin/clang";
-        compilers["cxx"] = "/usr/bin/clang++";
-    }
-    std::vector<std::string> compiler_pairs;
-    compiler_pairs.reserve(compilers.size());
-    std::transform(
-        compilers.begin(), compilers.end(), std::back_inserter(compiler_pairs),
-        [](const auto& pair) { return pair.first + "=" + pair.second; });
-    data.main_compiler = str::join_char(';', compiler_pairs);
-
     auto sets_raw = xml.find_section("sets");
     auto modules_raw = xml.find_section("modules");
     auto dependencies_raw = xml.find_section("dependencies");
 
+    data.compilers = parse_compilers(raw);
     data.sets = parse_sets(sets_raw);
     data.modules = parse_modules(modules_raw);
     data.dependencies = parse_dependencies(dependencies_raw);
 }
 
 void CMakeConfigStrategy::write(const ConfigData& data) {
-    // TODO: Escrever dados de configuração em um arquivo CMake (ex:
-    // CMakeLists.txt)
     core::scaffolding::CodeBlockLibrary cbl;
     cbl.code_block["project"] = "project(<__PROJECT_NAME__>)";
     cbl.code_block["set"] = "set(<__KEY__> <__VALUE__>)";
@@ -109,56 +111,78 @@ void CMakeConfigStrategy::write(const ConfigData& data) {
             add_subdirectory(<__DIR__>)
         endif()
     )";
+    cbl.setVariable("PROJECT_NAME", data.project_name);
+    try {
+        auto filename = "CMakeLists.txt";
+        ConfigData disk_data;
+        read(disk_data);
+        core::scaffolding::PseudoXmlParser xml;
+        std::string raw;
+        if (stdfs::exists(filename)) raw = core::fs::read_to_string(filename);
 
-    auto filename = "CMakeLists.txt";
-    ConfigData disk_data;
-    core::scaffolding::PseudoXmlParser xml;
-    read(disk_data);
-    std::string raw;
-    if (stdfs::exists(filename)) raw = core::fs::read_to_string(filename);
-
-    if (disk_data.project_name != data.project_name) {
-        int line;
-        std::tie(std::ignore, line) =
-            core::str::find_line_with(raw, "project(");
-        core::fs::replace_line(
-            filename, line,
-            core::cmake::wrap_flag("project", data.project_name));
-    }
-
-    if (disk_data.sets != data.sets) {
-        std::vector<std::string> sets;
-        for (auto set : data.sets) {
-            auto cu = core::str::split_char('=', set);
-            cbl.setVariable("KEY", cu[0]);
-            cbl.setVariable("VALUE", cu[1]);
-            sets.push_back(cbl.parse("set"));
+        if (disk_data.project_name != data.project_name) {
+            int line;
+            std::tie(std::ignore, line) =
+                core::str::find_line_with(raw, "project(");
+            if (line == -1) line = 1;
+            auto content = cbl.parse("project");
+            core::fs::replace_line(filename, line, content);
         }
 
-        xml.overwrite_section("sets", core::str::join_lines(sets));
-    }
+        if (disk_data.compilers != data.compilers) {
+            std::unordered_map<std::string, std::string> tag;
+            tag["_TAG"] = "compilers";
 
-    if (disk_data.modules != data.modules) {
-        std::vector<std::string> modules;
-        for (auto mod : data.modules) {
-            cbl.setVariable("MOD_NAME", mod);
-            modules.push_back(cbl.parse("module"));
+            for (const auto& s : data.compilers) {
+                auto sarr = str::split_char('=', s);
+                if (sarr.size() >= 2) {
+                    tag.emplace(sarr[0], sarr[1]);
+                } else {
+                    std::cerr
+                        << "Tentando converter múltiplos valores em um par: "
+                        << s << std::endl;
+                }
+            }
+            auto tag_xml = xml.wrap_single(tag);
+            xml.overwrite_single_tag("compilers", 0, tag, filename);
         }
 
-        xml.overwrite_section("modules", core::str::join_lines(modules));
-    }
+        if (disk_data.sets != data.sets) {
+            std::vector<std::string> sets;
+            for (auto set : data.sets) {
+                auto cu = core::str::split_char('=', set);
+                cbl.setVariable("KEY", cu[0]);
+                cbl.setVariable("VALUE", cu[1]);
+                sets.push_back(cbl.parse("set"));
+            }
 
-    if (disk_data.dependencies != data.dependencies) {
-        std::vector<std::string> deps;
-        for (auto dep : data.dependencies) {
-            auto cu = core::str::split_char('=', dep);
-            cbl.setVariable("ID", cu[0]);
-            cbl.setVariable("SRC", cu[1]);
-            cbl.setVariable("DIR", "vendors/" + cu[0]);
-            deps.push_back(cbl.parse("dependency"));
+            xml.overwrite_section("sets", core::str::join_lines(sets));
         }
 
-        xml.overwrite_section("", core::str::join_lines(deps));
+        if (disk_data.modules != data.modules) {
+            std::vector<std::string> modules;
+            for (auto mod : data.modules) {
+                cbl.setVariable("MOD_NAME", mod);
+                modules.push_back(cbl.parse("module"));
+            }
+
+            xml.overwrite_section("modules", core::str::join_lines(modules));
+        }
+
+        if (disk_data.dependencies != data.dependencies) {
+            std::vector<std::string> deps;
+            for (auto dep : data.dependencies) {
+                auto cu = core::str::split_char('=', dep);
+                cbl.setVariable("ID", cu[0]);
+                cbl.setVariable("SRC", cu[1]);
+                cbl.setVariable("DIR", "vendors/" + cu[0]);
+                deps.push_back(cbl.parse("dependency"));
+            }
+
+            xml.overwrite_section("dependencies", core::str::join_lines(deps));
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "error at write: " << e.what() << std::endl;
     }
 }
 

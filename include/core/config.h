@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace stdfs = std::filesystem;
@@ -14,7 +13,7 @@ namespace core::config {
 
 struct ConfigData {
     std::string project_name;
-    std::string main_compiler;
+    std::vector<std::string> compilers;
     std::string compile_flags;
     std::vector<std::string> sets;
     std::vector<std::string> modules;
