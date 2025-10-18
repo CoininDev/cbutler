@@ -17,14 +17,29 @@ std::vector<std::string> split_lines(const std::string& raw) {
     return lines;
 }
 
-std::vector<std::string> split_char(const char c, std::string raw) {
-    size_t pos = raw.find(c);
-    if (pos != std::string::npos) {
-        std::string chave = raw.substr(0, pos);
-        std::string valor = raw.substr(pos + 1);
-        return {chave, valor};
+std::vector<std::string> split_char(const char c, const std::string& raw) {
+    std::vector<std::string> lines;
+    std::istringstream stream(raw);
+    std::string line;
+
+    while (std::getline(stream, line, c)) {
+        lines.push_back(line);
     }
-    return {};
+
+    return lines;
+}
+
+std::string join_char(const char c, std::vector<std::string> raws) {
+    std::ostringstream stream;
+
+    for (size_t i = 0; i < raws.size(); ++i) {
+        stream << raws[i];
+        if (i != raws.size() - 1) {
+            stream << c;
+        }
+    }
+
+    return stream.str();
 }
 
 std::string join_lines(const std::vector<std::string>& lines) {

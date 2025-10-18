@@ -14,6 +14,8 @@ namespace core::config {
 
 struct ConfigData {
     std::string project_name;
+    std::string main_compiler;
+    std::string compile_flags;
     std::vector<std::string> sets;
     std::vector<std::string> modules;
     std::vector<std::string> dependencies;

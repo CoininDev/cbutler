@@ -48,10 +48,11 @@ new_subcommand::new_subcommand(CLI::App& parent_app)
 }
 
 void new_subcommand::run() {
-    std::string current_dir_name = stdfs::current_path().filename().string();
+    stdfs::path current_dir = stdfs::current_path();
+    std::string current_dir_name = current_dir.filename().string();
     if (!_scaffold_path.string().contains("/"))
         _scaffold_path = SCAFFOLDS_DIR / _scaffold_path;
-    if (!stdfs::is_empty(current_dir_name) && current_dir_name == _project_name)
+    if (!stdfs::is_empty(current_dir) && current_dir_name == _project_name)
         _create_folder = false;
 
     if (_create_folder) core::fs::ensure_dir(_project_name);

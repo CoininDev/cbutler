@@ -8,7 +8,7 @@
 
 // const std::filesystem::path SCAFFOLDS_DIR = "/usr/share/cbutler/scaffolds/";
 const std::filesystem::path SCAFFOLDS_DIR =
-    "/home/xab/Documentos/CLion/cbutler/scaffolds/";
+    "/home/xab/Documentos/prog/cpp/cbutler/scaffolds/";
 
 class subcommand {
    protected:

@@ -1,7 +1,10 @@
 #include "core/config.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <regex>
+#include <type_traits>
+#include <unordered_map>
 
 #include "core/cmake.h"
 #include "core/fs.h"
@@ -58,6 +61,20 @@ void CMakeConfigStrategy::read(ConfigData& data) {
     core::scaffolding::PseudoXmlParser xml;
 
     data.project_name = core::cmake::project_name(filename);
+
+    std::unordered_map<std::string, std::string> compilers =
+        xml.find_single_tags("compiler")[0];
+    if (compilers.empty()) {
+        // TODO: Make default cbutler compiler configurable
+        compilers["c"] = "/usr/bin/clang";
+        compilers["cxx"] = "/usr/bin/clang++";
+    }
+    std::vector<std::string> compiler_pairs;
+    compiler_pairs.reserve(compilers.size());
+    std::transform(
+        compilers.begin(), compilers.end(), std::back_inserter(compiler_pairs),
+        [](const auto& pair) { return pair.first + "=" + pair.second; });
+    data.main_compiler = str::join_char(';', compiler_pairs);
 
     auto sets_raw = xml.find_section("sets");
     auto modules_raw = xml.find_section("modules");
